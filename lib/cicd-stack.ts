@@ -11,7 +11,8 @@ export class CicdStack extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: cdk.StackProps) {
         super(scope, id, props);
 
-        const primaryRegion = 'ap-northeast-2';
+        //const primaryRegion = 'ap-northeast-2';
+        const primaryRegion = 'us-west-1';
         const secondaryRegion = 'us-west-2';
 
     }
