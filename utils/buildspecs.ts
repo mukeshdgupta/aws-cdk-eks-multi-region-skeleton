@@ -22,13 +22,23 @@ export function codeToECRspec (scope: cdk.Construct, apprepo: string) :PipelineP
                 pre_build: {
                     commands: [
                         'env', `$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)`, 
-                        'IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION'
+                        'IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION',
+                        'apt update',
+                        'apt install rpm -y',
+                        'pip3 install boto3',
+                        'wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.deb',
+                        'dpkg -i trivy_0.19.2_Linux-64bit.deb'
                     ]
                 },
                 build: {
                     commands: [
                         'docker build -t $ECR_REPO_URI:latest .',
-                        'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$IMAGE_TAG'
+                        'trivy -f json -o results.json --exit-code 0 --severity LOW --quiet --auto-refresh $ECR_REPO_URI:latest',
+                        'trivy -f json -o results.json --exit-code 1 --severity MEDIUM,HIGH,CRITICAL --quiet --auto-refresh $ECR_REPO_URI:latest',
+                        'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$IMAGE_TAG',
+                        'echo trivy scan completed on `date`',
+                        'python3 sechub_parser.py',
+                        'echo Report Sent to Security Hub on `date`'
                     ]
                 },
                 post_build: {
