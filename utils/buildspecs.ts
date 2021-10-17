@@ -36,15 +36,16 @@ export function codeToECRspec (scope: cdk.Construct, apprepo: string) :PipelineP
                         'trivy -f json -o results.json --exit-code 0 --severity LOW --quiet --auto-refresh $ECR_REPO_URI:latest',
                         'trivy -f json -o results.json --exit-code 1 --severity MEDIUM,HIGH,CRITICAL --quiet --auto-refresh $ECR_REPO_URI:latest',
                         'docker tag $ECR_REPO_URI:latest $ECR_REPO_URI:$IMAGE_TAG',
-                        'echo trivy scan completed on `date`',
-                        'python3 sechub_parser.py',
-                        'echo Report Sent to Security Hub on `date`'
+                        'docker push $ECR_REPO_URI:latest',
+                        'docker push $ECR_REPO_URI:$IMAGE_TAG'
+                       
                     ]
                 },
                 post_build: {
                     commands: [
-                        'docker push $ECR_REPO_URI:latest',
-                        'docker push $ECR_REPO_URI:$IMAGE_TAG'
+                        'echo trivy scan completed on `date`',
+                        'python3 sechub_parser.py',
+                        'echo Report Sent to Security Hub on `date`'
                     ]
                 }
             }

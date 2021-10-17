@@ -21,7 +21,7 @@ export class ClusterStack extends cdk.Stack {
       clusterName: `petclinic`,
       mastersRole: clusterAdmin,
       version: eks.KubernetesVersion.V1_21,
-      defaultCapacity: 0,
+      defaultCapacity: 1,
     });
     /*
     cluster.addAutoScalingGroupCapacity('spot-group', {
@@ -40,22 +40,17 @@ export class ClusterStack extends cdk.Stack {
   }
 }
 
-function createDeployRole(
-  scope: cdk.Construct,
-  id: string,
-  cluster: eks.Cluster
-): iam.Role {
+function createDeployRole(scope: cdk.Construct, id: string, cluster: eks.Cluster): iam.Role {
   const role = new iam.Role(scope, id, {
     roleName: PhysicalName.GENERATE_IF_NEEDED,
-    assumedBy: new iam.AccountRootPrincipal(),
+    assumedBy: new iam.AccountRootPrincipal()
   });
   cluster.awsAuth.addMastersRole(role);
 
   return role;
 }
-
 export interface EksProps extends cdk.StackProps {
-  cluster: eks.Cluster;
+  cluster: eks.Cluster
 }
 
 export interface CicdProps extends cdk.StackProps {

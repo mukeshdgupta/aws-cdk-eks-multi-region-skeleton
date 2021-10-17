@@ -29,12 +29,6 @@ export class CicdStack extends cdk.Stack {
             imageScanOnPush: true
             
         });
-        /*
-        const repository = new ecr.Repository(stack, 'Repo', {
-            imageScanOnPush: true
-            
-        });
-        */
         
         const buildForECR = codeToECRspec(this, ecrForMainRegion.repositoryUri);
         ecrForMainRegion.grantPullPush(buildForECR.role!);
