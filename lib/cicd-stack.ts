@@ -1,6 +1,7 @@
 import * as cdk from '@aws-cdk/core';
 import codecommit = require('@aws-cdk/aws-codecommit');
 import ecr = require('@aws-cdk/aws-ecr');
+import * as iam from "@aws-cdk/aws-iam";
 import codepipeline = require('@aws-cdk/aws-codepipeline');
 import pipelineAction = require('@aws-cdk/aws-codepipeline-actions');
 import { codeToECRspec, deployToEKSspec } from '../utils/buildspecs';
@@ -8,6 +9,7 @@ import { CicdProps } from './cluster-stack';
 
 
 export class CicdStack extends cdk.Stack {
+  
 
     constructor(scope: cdk.Construct, id: string, props: CicdProps) {
         super(scope, id, props);
@@ -30,7 +32,7 @@ export class CicdStack extends cdk.Stack {
             
         });
         
-        const buildForECR = codeToECRspec(this, ecrForMainRegion.repositoryUri);
+        const buildForECR = codeToECRspec(this, ecrForMainRegion.repositoryUri,props.firstRegionRole );
         ecrForMainRegion.grantPullPush(buildForECR.role!);
         
         const deployToMainCluster = deployToEKSspec(this, primaryRegion, props.firstRegionCluster, ecrForMainRegion, props.firstRegionRole);

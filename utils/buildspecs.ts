@@ -6,7 +6,7 @@ import * as ecr from '@aws-cdk/aws-ecr';
 import * as eks from '@aws-cdk/aws-eks';
 
 
-export function codeToECRspec (scope: cdk.Construct, apprepo: string) :PipelineProject {
+export function codeToECRspec (scope: cdk.Construct, apprepo: string, roleToAssume: iam.Role) :PipelineProject {
     const buildForECR = new codebuild.PipelineProject(scope, `build-to-ecr`, { 
         projectName: `build-to-ecr`,
         environment: {
@@ -24,6 +24,7 @@ export function codeToECRspec (scope: cdk.Construct, apprepo: string) :PipelineP
                         'env', `$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)`, 
                         'IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION',
                         'apt update',
+                        'apt install jq',
                         'apt install rpm -y',
                         'pip3 install boto3',
                         'wget https://github.com/aquasecurity/trivy/releases/download/v0.19.2/trivy_0.19.2_Linux-64bit.deb',
@@ -43,6 +44,12 @@ export function codeToECRspec (scope: cdk.Construct, apprepo: string) :PipelineP
                 },
                 post_build: {
                     commands: [
+                       `CREDENTIALS=$(aws sts assume-role --role-arn "${roleToAssume.roleArn}" --role-session-name codebuild-cdk)`,
+                       `export AWS_ACCESS_KEY_ID="$(echo \${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"`,
+                       `export AWS_SECRET_ACCESS_KEY="$(echo \${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"`,
+                       `export AWS_SESSION_TOKEN="$(echo \${CREDENTIALS} | jq -r '.Credentials.SessionToken')"`,
+                       `export AWS_EXPIRATION=$(echo \${CREDENTIALS} | jq -r '.Credentials.Expiration')`,
+                        
                         'echo trivy scan completed on `date`',
                         'python3 sechub_parser.py',
                         'echo Report Sent to Security Hub on `date`'
@@ -51,6 +58,10 @@ export function codeToECRspec (scope: cdk.Construct, apprepo: string) :PipelineP
             }
         })
      });
+      buildForECR.addToRolePolicy(new iam.PolicyStatement({
+        actions: ['sts:AssumeRole'],
+        resources: [roleToAssume.roleArn]
+    }))
 
      return buildForECR;
 
@@ -101,6 +112,8 @@ export function deployToEKSspec (scope: cdk.Construct, region: string, cluster: 
         actions: ['sts:AssumeRole'],
         resources: [roleToAssume.roleArn]
     }))
+    
+    
 
     return deployBuildSpec;
 

@@ -45,6 +45,11 @@ function createDeployRole(scope: cdk.Construct, id: string, cluster: eks.Cluster
     roleName: PhysicalName.GENERATE_IF_NEEDED,
     assumedBy: new iam.AccountRootPrincipal()
   });
+  role.addToPolicy(new iam.PolicyStatement({
+  resources: ['*'],
+  actions: ['securityhub:*'],
+  }));
+  
   cluster.awsAuth.addMastersRole(role);
 
   return role;
